@@ -15,6 +15,8 @@ provider "aws" {
 module "webserver_cluster" {
   source = "../../../modules/services/webserver-cluster"
 
+  server_text = "Olá, Mundo!"
+
   cluster_name           = "webservers-stage"
   db_remote_state_bucket = "terraform-state-bucket-squinelato-ch5"
   db_remote_state_key    = "stage/data-soure/mysql/terraform.tfstate"
@@ -22,6 +24,8 @@ module "webserver_cluster" {
   instance_type = "t3.micro"
   min_size      = 1
   max_size      = 2
+
+  enable_autoscaling = false
 
   custom_tags = {
     Owner     = "team-john"

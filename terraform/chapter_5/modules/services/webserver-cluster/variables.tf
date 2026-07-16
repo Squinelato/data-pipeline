@@ -39,3 +39,14 @@ variable "custom_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "enable_autoscaling" {
+  description = "If set to true, enable auto scaling"
+  type = bool
+}
+
+variable "server_text" {
+  description = "The text the web server should return"
+  type = string
+  default = "Hello, World!"
+}

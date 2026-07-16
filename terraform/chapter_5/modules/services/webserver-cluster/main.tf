@@ -58,6 +58,7 @@ resource "aws_launch_template" "example" {
     server_port = var.server_port
     db_address  = data.terraform_remote_state.db.outputs.address
     db_port     = data.terraform_remote_state.db.outputs.port
+    server_text = var.server_text
   }))
 
   lifecycle {
@@ -67,6 +68,7 @@ resource "aws_launch_template" "example" {
 }
 
 resource "aws_autoscaling_group" "example" {
+  name = "${var.cluster_name}"
   launch_template {
     id      = aws_launch_template.example.id
     version = "$Latest"
@@ -79,9 +81,20 @@ resource "aws_autoscaling_group" "example" {
   min_size = var.min_size
   max_size = var.max_size
 
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+    }
+  }
+
   dynamic "tag" {
     
-    for_each = var.custom_tags
+    for_each = {
+      for key, value in var.custom_tags :
+      key => upper(value)
+      if key != "Name" 
+    } 
 
     content {
       key                 = each.key
@@ -146,4 +159,33 @@ resource "aws_lb_listener_rule" "asg" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.asg.arn
   }
+}
+
+# only production will have auto scalling based on certain hours
+resource "aws_autoscaling_schedule" "scale_out_during_business_hours" {
+
+  count = var.enable_autoscaling ? 1 : 0
+
+  scheduled_action_name = "scale-out-during-business-hours"
+  min_size              = 2
+  max_size              = 3
+  desired_capacity      = 2
+  recurrence            = "0 9 * * *"
+  time_zone             = "America/Sao_Paulo"
+
+  autoscaling_group_name = aws_autoscaling_group.example.name
+}
+
+resource "aws_autoscaling_schedule" "scale_in_at_night" {
+
+  count = var.enable_autoscaling ? 1 : 0
+
+  scheduled_action_name = "scale-in-at-night"
+  min_size              = 2
+  max_size              = 3
+  desired_capacity      = 2
+  recurrence            = "0 17 * * *"
+  time_zone             = "America/Sao_Paulo"
+
+  autoscaling_group_name = aws_autoscaling_group.example.name
 }

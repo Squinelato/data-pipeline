@@ -26,3 +26,11 @@ output "for_directives" {
 output "for_directives_with_indexes" {
   value = "%{ for index, name in var.user_names }(${index}) ${name}, %{ endfor }"
 }
+
+output "for_directives_indexes_if" {
+  value = <<EOF
+  %{~ for i, name in var.user_names ~}
+  ${name}%{ if i < length(var.user_names) - 1}, %{ else }.%{ endif }
+  %{~ endfor ~}
+  EOF
+}
